@@ -9,7 +9,7 @@ Marley is surrounded by 4 arrows all shining different colors — green, red, bl
 Be careful though! The location of the colored arrows can rotate at random times, so watch out on where your color will land next!
 
 
-###### Crediting:
+## Crediting:
 Aviv Elor (Arduino to Unity Code)
 sirkitree (Catnip v3 - model)
 braininacat (fat cat 3D model)
