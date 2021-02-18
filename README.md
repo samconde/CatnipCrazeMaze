@@ -10,8 +10,8 @@ Be careful though! The location of the colored arrows can rotate at random times
 
 
 ## Crediting:
-- Aviv Elor (Arduino to Unity Code)
-- sirkitree (Catnip v3 - model)
-- braininacat (fat cat 3D model)
-- Unity Free Asset (Maze model)
-- Max Level (Arrow)
+- [Aviv Elor](https://www.avivelor.com/), (Arduino to Unity Code)
+- sirkitree, (Catnip v3 - model)
+- braininacat, (fat cat 3D model)
+- Unity Free Asset, (Maze model)
+- Max Level, (Arrow)
