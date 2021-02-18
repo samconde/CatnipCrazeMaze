@@ -6,6 +6,8 @@ using System;
 using System.Threading;
 using System.Reflection;
 using System.Text.RegularExpressions;
+using TMPro;
+using UnityEngine.UI;
 
 public class SerialReader : MonoBehaviour
 {
@@ -14,6 +16,9 @@ public class SerialReader : MonoBehaviour
 
     //must match microcontroller baudrate
     public int baudrate = 9600;
+
+    //
+    public TextMeshProUGUI countText;
 
     //initalize serial com data stream through serialport
     SerialPort stream;
@@ -36,10 +41,38 @@ public class SerialReader : MonoBehaviour
     public GameObject GreenIndicatorMarley;
     public GameObject IndicatorHolder;
 
+    public GameObject winTextObject;
 
+    // counting the score for the player
+    private int count;
+
+    public GameObject startButton;
+    public GameObject comPortField;
     // Start is called before the first frame update
-    void Start()
+    public void Start()
     {
+    	if(startButton == null) startButton = GameObject.Find("StartButton");
+        if(comPortField == null) comPortField = GameObject.Find("ArduinoCOMPort");
+        
+        if(comPortField.GetComponent<InputField>().text.Length > 1)
+        {
+        	SerialPort = comPortField.GetComponent<InputField>().text;
+        	PlayerPrefs.SetString("COM", SerialPort);
+        }
+        if(PlayerPrefs.HasKey("COM"))
+        {
+        	SerialPort = PlayerPrefs.GetString("COM");
+        }
+        else
+        {
+        	SerialPort = "/dev/cu.usbmodem14201";
+        	PlayerPrefs.SetString("COM", SerialPort);
+        }
+
+        comPortField.GetComponent<InputField>().text = SerialPort;
+
+
+
         stream = new SerialPort(SerialPort, baudrate); //Set the port and the baud rate
         stream.ReadTimeout = 10000; //enable timeout to prevent read from blocking code if no data is recieved
         stream.DtrEnable = true;
@@ -66,7 +99,57 @@ public class SerialReader : MonoBehaviour
         	IndicatorHolder = GameObject.Find("IndicatorHolder");
         }
 
+
+        count = 0;
+
+        SetCountText();
+        winTextObject.SetActive(false);
+
+        if(bSystemsClear) startButton.GetComponent<Button>().interactable = true;
     }
+
+    public GameObject StartMenu;
+   	public void StartGame()
+   	{
+   		if(StartMenu == null) StartMenu = GameObject.Find("Start Menu");
+   		StartMenu.SetActive(false);
+   		IndicatorHolder.GetComponent<AudioSource>().volume = 0.2f;
+
+   	}
+
+   	public void UpdateComPort()
+   	{
+   		if(comPortField == null) comPortField = GameObject.Find("ArduinoCOMPort");
+        
+        if(comPortField.GetComponent<InputField>().text.Length > 1)
+        {
+        	SerialPort = comPortField.GetComponent<InputField>().text;
+        	PlayerPrefs.SetString("COM", SerialPort);
+        }
+        if(PlayerPrefs.HasKey("COM"))
+        {
+        	SerialPort = PlayerPrefs.GetString("COM");
+        }
+        else
+        {
+        	SerialPort = "/dev/cu.usbmodem14201";
+        	PlayerPrefs.SetString("COM", SerialPort);
+        }
+
+        Application.LoadLevel (Application.loadedLevel);
+   	}
+
+
+    void SetCountText()
+    {
+        countText.text = "KittyCrazeMeter: " + ((((float)count)/9f)*100f).ToString() + "%";
+        if(count >= 9)
+        {
+        	winTextObject.SetActive(true);
+        }
+
+    }
+
 
     bool bGreen = false, bBlue = false, bRed = false, bYellow = false, bTimerEventFlag = false;
     //this thread collects all arduino data with unblocking code
@@ -121,12 +204,12 @@ public class SerialReader : MonoBehaviour
         }
     }
 
-    public float catspeed = 250;
+    public float catspeed = 300;
     IEnumerator HandleArduinoButtonInput(GameObject Indicator, float delayseconds)
     {
     	//move block in direction of click
     	var force = transform.position - Indicator.transform.position;
-    	var magnitude = catspeed;
+    	var magnitude = catspeed + (count-1)*50f;
     	force.Normalize();
     	GetComponent<Rigidbody>().AddForce(-force * magnitude);
 
@@ -179,6 +262,7 @@ public class SerialReader : MonoBehaviour
 
 
     int [] rotationOptions = {90, 180, 270, -90, -180, -270};
+
     // Update is called once per frame
     void Update()
     {
@@ -186,6 +270,13 @@ public class SerialReader : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Escape))
         {
             endFlag = true;
+            Application.Quit(); //end application if build
+        }
+
+        if(Input.GetKeyDown(KeyCode.R))
+        {
+        	UpdateComPort();
+        	Debug.Log("Restarting Game");
         }
 
 
@@ -241,4 +332,19 @@ public class SerialReader : MonoBehaviour
         }
 
     }
+
+    private void OnTriggerEnter(Collider other)
+    {
+    	if(other.gameObject.CompareTag("PickUp"))
+    	{
+    		other.gameObject.SetActive(false);
+    		count = count + 1;
+    		gameObject.GetComponent<AudioSource>().Play();
+
+    		SetCountText();
+    	}
+    }
+
+
+
 }
