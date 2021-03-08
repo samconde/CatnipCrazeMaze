@@ -48,6 +48,13 @@ public class SerialReader : MonoBehaviour
 
     public GameObject startButton;
     public GameObject comPortField;
+    public bool didMarleyMeow = false;
+
+    public void Awake()
+    {
+    	Time.timeScale = 0f;
+    }
+
     // Start is called before the first frame update
     public void Start()
     {
@@ -114,6 +121,7 @@ public class SerialReader : MonoBehaviour
    		if(StartMenu == null) StartMenu = GameObject.Find("Start Menu");
    		StartMenu.SetActive(false);
    		IndicatorHolder.GetComponent<AudioSource>().volume = 0.2f;
+   		Time.timeScale = 1f;
 
    	}
 
@@ -146,12 +154,29 @@ public class SerialReader : MonoBehaviour
         if(count >= 9)
         {
         	winTextObject.SetActive(true);
+        	Time.timeScale = 0f;
         }
 
     }
 
+    public bool didDoggoEatMarley = false;
+    public void DoggoAteMarley()
+    {	
+    	if(didDoggoEatMarley == false)
+    	{
+    	countText.text = "Oh no! The doggo flopped Marley :( -- Press 'R' to Restart... Your final KittyCrazeMeter was " + ((((float)count)/9f)*100f).ToString() + "%";
+    	countText.color = Color.red;
+    	IndicatorHolder.GetComponent<AudioSource>().volume = 0.02f;
+    	gameObject.GetComponent<AudioSource>().Play();
+    	IndicatorHolder.SetActive(false);
+    	didDoggoEatMarley = true;
+    	if(GameObject.Find("MinimapSphere")!= null) GameObject.Find("MinimapSphere").SetActive(false);
+    	StartCoroutine(FlipMarley());
+    	}
+    }
 
-    bool bGreen = false, bBlue = false, bRed = false, bYellow = false, bTimerEventFlag = false;
+
+    bool bGreen = false, bBlue = false, bRed = false, bYellow = false, bTimerEventFlag = false, bMeowEventFlag = false;
     //this thread collects all arduino data with unblocking code
     private void GetSerial()
     {
@@ -193,6 +218,12 @@ public class SerialReader : MonoBehaviour
             		//randomize color loactions
             		bTimerEventFlag = true;
             	}
+
+            	if(eventstr.CompareTo("MicEvent") == 0)
+            	{
+            		//indicate that marley meowed
+            		bMeowEventFlag = true;
+            	}
             }
             
         }
@@ -209,6 +240,11 @@ public class SerialReader : MonoBehaviour
     {
     	//move block in direction of click
     	var force = transform.position - Indicator.transform.position;
+    	if(Time.timeScale != 1f || didDoggoEatMarley == true)
+    	{
+    	force = Vector3.zero;
+    	}
+
     	var magnitude = catspeed + (count-1)*50f;
     	force.Normalize();
     	GetComponent<Rigidbody>().AddForce(-force * magnitude);
@@ -229,7 +265,7 @@ public class SerialReader : MonoBehaviour
     	{
     		targetAngle = targetAngle + 360;
     	}
-    	Debug.Log("Rotating to: " + targetAngle.ToString());
+    	//Debug.Log("Rotating to: " + targetAngle.ToString());
 
     	Vector3 byAngles = new Vector3(0f, targetAngle, 0f);
     	float inTime = rotatetime;
@@ -260,9 +296,24 @@ public class SerialReader : MonoBehaviour
 
     }
 
+    IEnumerator FlipMarley()
+    {
+    	float inTime = 1.5f;
+    	Vector3 byAngles = new Vector3(90f, 90f, 0f);
+    	var fromAngle = gameObject.transform.rotation;
+        var toAngle = Quaternion.Euler(gameObject.transform.eulerAngles + byAngles);
+        for(var t = 0f; t < 1; t += Time.deltaTime/inTime) {
+
+             gameObject.transform.rotation = Quaternion.Lerp(fromAngle, toAngle, t);
+             yield return null;
+        }
+        gameObject.GetComponent<AudioSource>().Play();
+    }
+
 
     int [] rotationOptions = {90, 180, 270, -90, -180, -270};
-
+    float timerMeowTime = 0f;
+    public GameObject MeowText;
     // Update is called once per frame
     void Update()
     {
@@ -312,6 +363,25 @@ public class SerialReader : MonoBehaviour
         	StartCoroutine(RotateIndicators(IndicatorHolder, rotationOptions[UnityEngine.Random.Range(0,rotationOptions.Length-1)], 1.5f));
         }
 
+        if(bMeowEventFlag == true)
+        {
+        	timerMeowTime = 2f;
+        	bMeowEventFlag = false;
+        	//Debug.Log("Meow!");
+        }
+
+        if(timerMeowTime > 0)
+        {
+        	didMarleyMeow = true;
+        	timerMeowTime = timerMeowTime - Time.deltaTime;
+        	MeowText.SetActive(true);
+        	//indicate a meow on marley
+        }
+        else
+        {
+        	didMarleyMeow = false;
+        	MeowText.SetActive(false);
+        }
 
         //if in unity editor, press escape to close the thread
         if (editFlag == true)

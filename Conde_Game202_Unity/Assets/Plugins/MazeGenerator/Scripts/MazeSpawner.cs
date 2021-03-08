@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
+using UnityEngine.AI;
 
 //<summary>
 //Game object, that creates maze and instantiates it in scene
@@ -26,6 +27,7 @@ public class MazeSpawner : MonoBehaviour {
 	public bool AddGaps = true;
 	public GameObject GoalPrefab = null;
 	public int numGoals = 9;
+	public NavMeshSurface NavSurface;
 
 	private BasicMazeGenerator mMazeGenerator = null;
 
@@ -96,5 +98,7 @@ public class MazeSpawner : MonoBehaviour {
 				}
 			}
 		}
+
+		NavSurface.BuildNavMesh();
 	}
 }
